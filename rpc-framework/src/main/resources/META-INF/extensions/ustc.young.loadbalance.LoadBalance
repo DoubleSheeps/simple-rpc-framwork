@@ -1,1 +1,2 @@
-loadBalance=ustc.young.loadbalance.loadbalancer.ConsistentHashLoadBalance
+random=ustc.young.loadbalance.loadbalancer.RandomLoadBalance
+consistent-hash=ustc.young.loadbalance.loadbalancer.ConsistentHashLoadBalance

@@ -11,7 +11,8 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum LoadBalanceEnum {
-    LOADBALANCE("loadBalance");
+    RANDOM("random"),
+    CONSISTENT_HASH("consistent-hash");
 
     private final String name;
 }
