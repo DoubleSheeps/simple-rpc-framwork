@@ -9,9 +9,9 @@ import ustc.young.annotations.RpcScan;
  * @date 2024-04-02 18:04
  **/
 @RpcScan(basePackage = {"usct.young"})
-public class NettyClientMain {
+public class ClientMain {
     public static void main(String[] args) throws InterruptedException {
-        AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(NettyClientMain.class);
+        AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(ClientMain.class);
         HelloController helloController = (HelloController) applicationContext.getBean("helloController");
         helloController.test();
     }

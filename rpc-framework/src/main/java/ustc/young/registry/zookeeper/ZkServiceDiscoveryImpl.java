@@ -2,16 +2,20 @@ package ustc.young.registry.zookeeper;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
+import ustc.young.enums.DefaultConfigEnum;
 import ustc.young.enums.LoadBalanceEnum;
+import ustc.young.enums.RpcConfigEnum;
 import ustc.young.extension.ExtensionLoader;
 import ustc.young.loadbalance.LoadBalance;
 import ustc.young.registry.ServiceDiscovery;
 import ustc.young.registry.zookeeper.util.CuratorUtils;
 import ustc.young.remoting.dto.RpcRequest;
 import ustc.young.utils.CollectionUtil;
+import ustc.young.utils.PropertiesFileUtil;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * @author YoungSheep
@@ -23,7 +27,11 @@ public class ZkServiceDiscoveryImpl implements ServiceDiscovery {
     private final LoadBalance loadBalance;
 
     public ZkServiceDiscoveryImpl(){
-        loadBalance = ExtensionLoader.getExtensionLoader(LoadBalance.class).getExtension(LoadBalanceEnum.CONSISTENT_HASH.getName());
+        Properties properties = PropertiesFileUtil.getPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
+        String loadBalanceName =  properties!=null && properties.getProperty(RpcConfigEnum.LOAD_BALANCE.getPropertyValue())!=null
+                ? properties.getProperty(RpcConfigEnum.LOAD_BALANCE.getPropertyValue())
+                : DefaultConfigEnum.DEFAULT_LOAD_BALANCE.getName();
+        loadBalance = ExtensionLoader.getExtensionLoader(LoadBalance.class).getExtension(loadBalanceName);
     }
     @Override
     public InetSocketAddress lookupService(RpcRequest rpcRequest, String transport) {

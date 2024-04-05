@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import ustc.young.annotations.RpcReference;
 import ustc.young.annotations.RpcService;
 import ustc.young.config.RpcServiceConfig;
+import ustc.young.enums.DefaultConfigEnum;
 import ustc.young.enums.RpcConfigEnum;
 import ustc.young.enums.RpcRequestTransportEnum;
 import ustc.young.extension.ExtensionLoader;
@@ -30,15 +31,19 @@ import java.util.Properties;
 public class SpringBeanPostProcessor implements BeanPostProcessor {
     private final ServiceProvider serviceProvider;
     private final RpcRequestTransport rpcClient;
-    private final int nettyPort;
+    private final int port;
+    private final String transportName;
     private static final int DEFAULT_PORT=4321;
 
     public SpringBeanPostProcessor(){
         this.serviceProvider = SingletonFactory.getInstance(ZkServiceProviderImpl.class);
-        this.rpcClient = ExtensionLoader.getExtensionLoader(RpcRequestTransport.class).getExtension(RpcRequestTransportEnum.NETTY.getName());
-        Properties properties = PropertiesFileUtil.readPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
-        this.nettyPort =  properties!=null && properties.getProperty(RpcConfigEnum.NETTY_PORT.getPropertyValue())!=null
-                ? Integer.parseInt(properties.getProperty(RpcConfigEnum.NETTY_PORT.getPropertyValue()))
+        Properties properties = PropertiesFileUtil.getPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
+        transportName =  properties!=null && properties.getProperty(RpcConfigEnum.TRANSPORT.getPropertyValue())!=null
+                ? properties.getProperty(RpcConfigEnum.TRANSPORT.getPropertyValue())
+                : DefaultConfigEnum.DEFAULT_TRANSPORT.getName();
+        this.rpcClient = ExtensionLoader.getExtensionLoader(RpcRequestTransport.class).getExtension(transportName);
+        this.port =  properties!=null && properties.getProperty(RpcConfigEnum.SERVER_PORT.getPropertyValue())!=null
+                ? Integer.parseInt(properties.getProperty(RpcConfigEnum.SERVER_PORT.getPropertyValue()))
                 : DEFAULT_PORT;
     }
 
@@ -50,10 +55,10 @@ public class SpringBeanPostProcessor implements BeanPostProcessor {
             RpcServiceConfig rpcServiceConfig = RpcServiceConfig.builder()
                     .group(rpcService.group())
                     .version(rpcService.version())
-                    .transport(RpcRequestTransportEnum.NETTY.getName())
+                    .transport(transportName)
                     .service(bean)
                     .build();
-            serviceProvider.publishService(rpcServiceConfig, this.nettyPort);
+            serviceProvider.publishService(rpcServiceConfig, this.port);
         }
         return bean;
     }
@@ -68,7 +73,7 @@ public class SpringBeanPostProcessor implements BeanPostProcessor {
                 RpcServiceConfig rpcServiceConfig = RpcServiceConfig.builder()
                         .group(rpcReference.group())
                         .version(rpcReference.version())
-                        .transport(RpcRequestTransportEnum.NETTY.getName())
+                        .transport(transportName)
                         .build();
                 RpcClientProxy rpcClientProxy = new RpcClientProxy(rpcClient,rpcServiceConfig);
                 Object clientProxy = rpcClientProxy.getProxy(declaredField.getType());

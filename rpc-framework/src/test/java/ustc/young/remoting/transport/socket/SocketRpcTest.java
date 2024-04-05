@@ -25,9 +25,9 @@ class SocketRpcTest {
         rpcServiceConfig.setGroup("test");
         rpcServiceConfig.setVersion("1.0");
         rpcServiceConfig.setTransport(RpcRequestTransportEnum.SOCKET.getName());
-        SocketRpcServer socketRpcServer = new SocketRpcServer(4821);
+        SocketRpcServer socketRpcServer = new SocketRpcServer();
         socketRpcServer.registerService(rpcServiceConfig);
-        socketRpcServer.start();
+        socketRpcServer.run();
 
 
     }

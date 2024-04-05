@@ -10,9 +10,7 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
-import ustc.young.enums.RpcMessageTypeEnum;
-import ustc.young.enums.RpcRequestTransportEnum;
-import ustc.young.enums.ServiceDiscoveryEnum;
+import ustc.young.enums.*;
 import ustc.young.extension.ExtensionLoader;
 import ustc.young.factory.SingletonFactory;
 import ustc.young.registry.ServiceDiscovery;
@@ -22,8 +20,10 @@ import ustc.young.remoting.dto.RpcResponse;
 import ustc.young.remoting.transport.RpcRequestTransport;
 import ustc.young.remoting.transport.netty.coder.NettyDecoder;
 import ustc.young.remoting.transport.netty.coder.NettyEncoder;
+import ustc.young.utils.PropertiesFileUtil;
 
 import java.net.InetSocketAddress;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -46,7 +46,11 @@ public class NettyClient implements RpcRequestTransport {
     public NettyClient(){
         this.responseFuture = SingletonFactory.getInstance(ResponseFuture.class);
         this.channelProvider = SingletonFactory.getInstance(ChannelProvider.class);
-        this.serviceDiscovery = ExtensionLoader.getExtensionLoader(ServiceDiscovery.class).getExtension(ServiceDiscoveryEnum.ZK.getName());
+        Properties properties = PropertiesFileUtil.getPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
+        String serviceDiscoveryName = properties!=null && properties.getProperty(RpcConfigEnum.SERVICE_DISCOVERY.getPropertyValue())!=null
+                ? properties.getProperty(RpcConfigEnum.SERVICE_DISCOVERY.getPropertyValue())
+                : DefaultConfigEnum.DEFAULT_SERVICE_DISCOVERY.getName();
+        this.serviceDiscovery = ExtensionLoader.getExtensionLoader(ServiceDiscovery.class).getExtension(serviceDiscoveryName);
     }
 
 //    static {

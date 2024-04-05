@@ -110,7 +110,7 @@ public final class CuratorUtils {
         }
         //否则通过重试策略启动
         //检测是否存在配置文件
-        Properties properties = PropertiesFileUtil.readPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
+        Properties properties = PropertiesFileUtil.getPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
         String zookeeperAddress = properties!=null && properties.getProperty(RpcConfigEnum.ZOOKEEPER_ADDRESS.getPropertyValue())!=null
                 ? properties.getProperty(RpcConfigEnum.ZOOKEEPER_ADDRESS.getPropertyValue())
                 : DEFAULT_ZOOKEEPER_ADDRESS;

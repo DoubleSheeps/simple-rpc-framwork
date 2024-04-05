@@ -2,18 +2,21 @@ package ustc.young.remoting.transport.socket;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ustc.young.enums.DefaultConfigEnum;
+import ustc.young.enums.RpcConfigEnum;
 import ustc.young.enums.RpcRequestTransportEnum;
-import ustc.young.enums.ServiceDiscoveryEnum;
 import ustc.young.extension.ExtensionLoader;
 import ustc.young.registry.ServiceDiscovery;
 import ustc.young.remoting.dto.RpcRequest;
 import ustc.young.remoting.transport.RpcRequestTransport;
+import ustc.young.utils.PropertiesFileUtil;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Properties;
 
 /**
  * @author YoungSheep
@@ -26,7 +29,11 @@ public class SocketRpcClient implements RpcRequestTransport {
     private final ServiceDiscovery serviceDiscovery;
 
     public SocketRpcClient(){
-        this.serviceDiscovery = ExtensionLoader.getExtensionLoader(ServiceDiscovery.class).getExtension(ServiceDiscoveryEnum.ZK.getName());
+        Properties properties = PropertiesFileUtil.getPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
+        String serviceDiscoveryName = properties!=null && properties.getProperty(RpcConfigEnum.SERVICE_DISCOVERY.getPropertyValue())!=null
+                ? properties.getProperty(RpcConfigEnum.SERVICE_DISCOVERY.getPropertyValue())
+                : DefaultConfigEnum.DEFAULT_SERVICE_DISCOVERY.getName();
+        this.serviceDiscovery = ExtensionLoader.getExtensionLoader(ServiceDiscovery.class).getExtension(serviceDiscoveryName);
     }
 
     @Override

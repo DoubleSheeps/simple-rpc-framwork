@@ -2,16 +2,20 @@ package ustc.young.provider.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import ustc.young.config.RpcServiceConfig;
+import ustc.young.enums.DefaultConfigEnum;
+import ustc.young.enums.RpcConfigEnum;
 import ustc.young.enums.ServiceRegistryEnum;
 import ustc.young.extension.ExtensionLoader;
 import ustc.young.provider.ServiceProvider;
 import ustc.young.registry.ServiceRegistry;
+import ustc.young.utils.PropertiesFileUtil;
 import ustc.young.utils.StringUtil;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,7 +34,11 @@ public class ZkServiceProviderImpl implements ServiceProvider {
     public ZkServiceProviderImpl(){
         serviceMap = new ConcurrentHashMap<>();
         registeredService = ConcurrentHashMap.newKeySet();
-        serviceRegistry = ExtensionLoader.getExtensionLoader(ServiceRegistry.class).getExtension(ServiceRegistryEnum.ZK.getName());
+        Properties properties = PropertiesFileUtil.getPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
+        String serviceRegistryName =  properties!=null && properties.getProperty(RpcConfigEnum.SERVICE_REGISTRY.getPropertyValue())!=null
+                ? properties.getProperty(RpcConfigEnum.SERVICE_REGISTRY.getPropertyValue())
+                : DefaultConfigEnum.DEFAULT_SERVICE_REGISTRY.getName();
+        serviceRegistry = ExtensionLoader.getExtensionLoader(ServiceRegistry.class).getExtension(serviceRegistryName);
     }
     @Override
     public void addService(RpcServiceConfig rpcServiceConfig) {

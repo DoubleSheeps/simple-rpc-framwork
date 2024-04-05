@@ -21,6 +21,7 @@ import ustc.young.extension.ExtensionLoader;
 import ustc.young.factory.SingletonFactory;
 import ustc.young.provider.ServiceProvider;
 import ustc.young.provider.impl.ZkServiceProviderImpl;
+import ustc.young.remoting.transport.RpcServer;
 import ustc.young.remoting.transport.netty.coder.NettyDecoder;
 import ustc.young.remoting.transport.netty.coder.NettyEncoder;
 import ustc.young.serialize.Serializer;
@@ -35,25 +36,26 @@ import java.util.Properties;
  * @date 2024-04-01 13:41
  **/
 @Slf4j
-@Component
-public class NettyServer {
+public class NettyServer implements RpcServer {
     private final int port;
     private static final int DEFAULT_PORT=4321;
 
     private final ServiceProvider serviceProvider;
 
     public NettyServer(){
-        Properties properties = PropertiesFileUtil.readPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
-        this.port =  properties!=null && properties.getProperty(RpcConfigEnum.NETTY_PORT.getPropertyValue())!=null
-                ? Integer.parseInt(properties.getProperty(RpcConfigEnum.NETTY_PORT.getPropertyValue()))
+        Properties properties = PropertiesFileUtil.getPropertiesFile(RpcConfigEnum.RPC_CONFIG_PATH.getPropertyValue());
+        this.port =  properties!=null && properties.getProperty(RpcConfigEnum.SERVER_PORT.getPropertyValue())!=null
+                ? Integer.parseInt(properties.getProperty(RpcConfigEnum.SERVER_PORT.getPropertyValue()))
                 : DEFAULT_PORT;
         serviceProvider = SingletonFactory.getInstance(ZkServiceProviderImpl.class);
     }
 
+    @Override
     public void registerService(RpcServiceConfig rpcServiceConfig){
         serviceProvider.publishService(rpcServiceConfig,port);
     }
 
+    @Override
     public void run(){
         CustomShutdownHook.getCustomShutdownHook().clearAll(port);
         EventLoopGroup bossGroup = new NioEventLoopGroup();

@@ -13,6 +13,11 @@ import lombok.Getter;
 public enum RpcConfigEnum {
     RPC_CONFIG_PATH("rpc.properties"),
     ZOOKEEPER_ADDRESS("rpc.zookeeper.address"),
-    NETTY_PORT("rpc.netty.port");
+    SERVER_PORT("rpc.server.port"),
+    LOAD_BALANCE("rpc.loadbalance"),
+    SERIALIZER("rpc.serializer"),
+    SERVICE_DISCOVERY("rpc.service.discovery"),
+    SERVICE_REGISTRY("rpc.service.registry"),
+    TRANSPORT("rpc.transport");
     private final String propertyValue;
 }
