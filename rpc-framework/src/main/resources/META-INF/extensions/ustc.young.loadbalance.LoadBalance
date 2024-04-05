@@ -1,0 +1,1 @@
+loadBalance=ustc.young.loadbalance.loadbalancer.ConsistentHashLoadBalance
