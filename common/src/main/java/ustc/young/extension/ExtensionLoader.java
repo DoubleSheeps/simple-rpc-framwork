@@ -132,7 +132,7 @@ public final class ExtensionLoader<T> {
             synchronized (cachedClasses){
                 classes = cachedClasses.get();
                 if(classes == null){
-                    //不需要ConcurrentHashMap，原因可能是class类只需要在第一次初始化时写入，之后只是需要并发读取
+                    //不需要ConcurrentHashMap，原因是class类只需要在第一次初始化时写入(双重检查已经保证了单线程操作），之后只是需要并发读取
                     classes = new HashMap<>();
                     loadDirectory(classes);
                     cachedClasses.set(classes);

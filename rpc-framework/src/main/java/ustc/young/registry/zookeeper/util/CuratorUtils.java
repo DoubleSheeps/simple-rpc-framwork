@@ -40,7 +40,7 @@ public final class CuratorUtils {
     /**
      * 创建持久化节点
      * @param zkClient zookeeper客户端
-     * @param path 路径，eg：/young-rpc/young.ustc.young.HelloService/socket/127.0.0.1:9999
+     * @param path 路径，eg：/young-rpc/ustc.young.HelloService/socket/127.0.0.1:9999
      */
     public static void createPersistentNode(CuratorFramework zkClient,String path){
         try {
@@ -56,31 +56,6 @@ public final class CuratorUtils {
         }
     }
 
-    /**
-     * 获取子节点
-     * @param zkClient 客户端
-     * @param rpcServiceName 节点名称（服务名）
-     * @return
-     */
-    public static List<String> getChildrenNodes(CuratorFramework zkClient,String rpcServiceName){
-        if(SERVICE_ADDRESS_MAP.containsKey(rpcServiceName)){
-            return SERVICE_ADDRESS_MAP.get(rpcServiceName);
-        }
-        List<String> result = new ArrayList<>();
-        List<String> transportNode = null;
-        String servicePath = getServicePath(rpcServiceName);
-        try {
-            transportNode = zkClient.getChildren().forPath(servicePath);
-            for (String transport:transportNode){
-                result.addAll(zkClient.getChildren().forPath(servicePath+"/"+transport).stream().map(s-> transport + "/" + s).collect(Collectors.toList()));
-            }
-            SERVICE_ADDRESS_MAP.put(rpcServiceName,result);
-            registerWatcher(rpcServiceName,zkClient);
-        } catch (Exception e) {
-            log.error("获取子节点失败，path:[{}]",servicePath);
-        }
-        return result;
-    }
 
     /**
      * 获取子节点
@@ -90,35 +65,19 @@ public final class CuratorUtils {
      * @return
      */
     public static List<String> getChildrenNodes(CuratorFramework zkClient,String rpcServiceName,String transportName){
-        SERVICE_ADDRESS_MAP.forEach(((s, strings) -> {
-            log.info("rpcServiceName:[{}] ->[{}]",s,strings);
-//            for (String s1:strings){
-//                log.info("address:[{}]",strings);
-//            }
-        }));
-        if(SERVICE_ADDRESS_MAP.containsKey(rpcServiceName)){
-            return getNodesByTransport(SERVICE_ADDRESS_MAP.get(rpcServiceName),transportName);
+        if(SERVICE_ADDRESS_MAP.containsKey(rpcServiceName+"/"+transportName)){
+            return SERVICE_ADDRESS_MAP.get(rpcServiceName+"/"+transportName);
         }
-        List<String> result = new ArrayList<>();
-        List<String> transportNodes = null;
-        String servicePath = getServicePath(rpcServiceName);
+        List<String> result = null;
+        String servicePath = getServicePath(rpcServiceName,transportName);
         try {
-            transportNodes = zkClient.getChildren().forPath(servicePath);
-            for (String transport:transportNodes){
-                result.addAll(zkClient.getChildren().forPath(servicePath+"/"+transport).stream().map(s-> transport + "/" + s).collect(Collectors.toList()));
-            }
-            SERVICE_ADDRESS_MAP.put(rpcServiceName,result);
+            result = zkClient.getChildren().forPath(servicePath);
+            SERVICE_ADDRESS_MAP.put(rpcServiceName+"/"+transportName,result);
             registerWatcher(rpcServiceName,zkClient);
         } catch (Exception e) {
             log.error("获取子节点失败，path:[{}]",servicePath);
         }
-        SERVICE_ADDRESS_MAP.forEach(((s, strings) -> {
-            log.info("update rpcServiceName:[{}] ->[{}]",s,strings);
-//            for (String s1:strings){
-//                log.info("address:[{}]",strings);
-//            }
-        }));
-        return getNodesByTransport(result,transportName);
+        return result;
     }
 
     /**
@@ -184,14 +143,17 @@ public final class CuratorUtils {
         PathChildrenCache pathChildrenCache = new PathChildrenCache(zkClient,servicePath,true);
         PathChildrenCacheListener pathChildrenCacheListener = ((curatorFramework, pathChildrenCacheEvent) -> {
             List<String> transportNodes = curatorFramework.getChildren().forPath(servicePath);
-            List<String> serviceAddresses = new ArrayList<>();
             for(String transport:transportNodes){
-                serviceAddresses.addAll(curatorFramework.getChildren().forPath(servicePath+"/"+transport).stream().map(s-> transport + "/" + s).collect(Collectors.toList()));
+                List<String> serviceAddresses = curatorFramework.getChildren().forPath(servicePath+"/"+transport);
+                SERVICE_ADDRESS_MAP.put(rpcServiceName+"/"+transport,serviceAddresses);
             }
-            SERVICE_ADDRESS_MAP.put(rpcServiceName,serviceAddresses);
         });
         pathChildrenCache.getListenable().addListener(pathChildrenCacheListener);
         pathChildrenCache.start();
+    }
+
+    private static String getServicePath(String rpcServiceName,String transportName){
+        return ZK_REGISTER_ROOT_PATH + "/" + rpcServiceName + "/" + transportName;
     }
 
     private static String getServicePath(String rpcServiceName){
