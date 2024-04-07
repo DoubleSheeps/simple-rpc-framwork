@@ -11,6 +11,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ustc.young.config.CustomShutdownHook;
@@ -27,8 +29,11 @@ import ustc.young.remoting.transport.netty.coder.NettyEncoder;
 import ustc.young.serialize.Serializer;
 import ustc.young.serialize.kryo.KryoSerializer;
 import ustc.young.utils.PropertiesFileUtil;
+import ustc.young.utils.RuntimeUtil;
+import ustc.young.utils.threadpool.ThreadPoolFactoryUtil;
 
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author YoungSheep
@@ -58,8 +63,12 @@ public class NettyServer implements RpcServer {
     @Override
     public void run(){
         CustomShutdownHook.getCustomShutdownHook().clearAll(port);
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new NioEventLoopGroup(1);
         EventLoopGroup workerGroup = new NioEventLoopGroup();
+        DefaultEventExecutorGroup serviceHandlerGroup = new DefaultEventExecutorGroup(
+                RuntimeUtil.cpus() * 2,
+                ThreadPoolFactoryUtil.createThreadFactory("service-handler-group", false)
+        );
         try{
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.group(bossGroup,workerGroup)
@@ -72,9 +81,11 @@ public class NettyServer implements RpcServer {
 
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
+                            //30分钟没收到客户端请求就产生读空闲状态，实现心跳机制，长时间没收到心跳包说明连接异常，直接关闭
+                            socketChannel.pipeline().addLast(new IdleStateHandler(30, 0, 0, TimeUnit.SECONDS));
                             socketChannel.pipeline().addLast(new NettyDecoder());
                             socketChannel.pipeline().addLast(new NettyEncoder());
-                            socketChannel.pipeline().addLast(new NettyServerHandler());
+                            socketChannel.pipeline().addLast(serviceHandlerGroup,new NettyServerHandler());
                         }
                     });
             ChannelFuture future = bootstrap.bind(port).sync();
