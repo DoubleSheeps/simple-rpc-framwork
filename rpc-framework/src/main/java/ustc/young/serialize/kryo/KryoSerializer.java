@@ -3,6 +3,7 @@ package ustc.young.serialize.kryo;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import ustc.young.remoting.dto.RpcMessage;
 import ustc.young.remoting.dto.RpcRequest;
 import ustc.young.remoting.dto.RpcResponse;
 import ustc.young.serialize.Serializer;
@@ -25,8 +26,6 @@ public class KryoSerializer implements Serializer {
      */
     private static final ThreadLocal<Kryo> kryoThreadLocal = ThreadLocal.withInitial(()->{
         Kryo kryo = new Kryo();
-        kryo.register(RpcRequest.class);
-        kryo.register(RpcResponse.class);
         kryo.setReferences(true);
         kryo.setRegistrationRequired(false);
         return kryo;
