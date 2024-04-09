@@ -40,7 +40,7 @@ public final class CuratorUtils {
     /**
      * 创建持久化节点
      * @param zkClient zookeeper客户端
-     * @param path 路径，eg：/young-rpc/ustc.young.HelloService/socket/127.0.0.1:9999
+     * @param path 路径，eg：/young-rpc/ustc.young.HelloService/socket
      */
     public static void createPersistentNode(CuratorFramework zkClient,String path){
         try {
@@ -53,6 +53,25 @@ public final class CuratorUtils {
             REGISTERED_PATH_SET.add(path);
         } catch (Exception e) {
             log.error("创建持久化节点失败，path:[{}]",path);
+        }
+    }
+
+    /**
+     * 创建临时节点
+     * @param zkClient zookeeper客户端
+     * @param path 路径，eg：/young-rpc/ustc.young.HelloService/socket/127.0.0.1:9999
+     */
+    public static void createEphemeralNode(CuratorFramework zkClient,String path){
+        try {
+            if(REGISTERED_PATH_SET.contains(path)||zkClient.checkExists().forPath(path)!=null){
+                log.info("节点已经存在，path:[{}]",path);
+            }else {
+                zkClient.create().withMode(CreateMode.EPHEMERAL).forPath(path);
+                log.info("创建临时节点成功，path:[{}]",path);
+            }
+            REGISTERED_PATH_SET.add(path);
+        } catch (Exception e) {
+            log.error("创建临时节点失败，path:[{}]",path);
         }
     }
 
