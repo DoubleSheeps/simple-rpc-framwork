@@ -28,6 +28,7 @@
 ### 实现过程
 
 ![](./images/Pastedimage20240405094729.png)
+
 1. 首先需要有一个**注册中心**，这样服务端向注册中心进行注册，注册中心会记录服务端提供的服务信息，之后客户端需要服务时，也要先向注册中心查找提供服务的服务器地址。
 2. 之后就需要进行**网络传输**，因为客户端与服务提供者的服务器是在不同机器上的，为了实现客户端能调用服务端的服务，我们就要实现底层的网络传输，通过发送调用请求和响应实现远程服务的调用，而网络传输都是二进制的字节码，因此我们也需要实现序列化和反序列化将请求消息对象和响应消息对象进行二进制的编解码，同时为了解决Tcp粘包拆包问题以及序列化方式的可扩展问题，我们还需要定义自己的传输协议，这样在每段消息头中加入消息长度字段和序列化协议字段信息，就可以有效的分割出每个消息，并进行反序列化。
 3. 完成上面两步，我们基本上以及实现了RPC的雏形，也就是实现了客户端调用服务端的方法，但这样意味着每次客户端要调用一个服务，需要先组装调用请求消息，然后调用发送消息的方法，最后获取到响应消息，对客户端来说调用一个服务依然比较复杂，涉及到了很多底层的传输协议。因此我们就需要实现一个**动态代理**，当客户端要调用一个服务时就通过动态代理来调用，而动态代理就会根据客户端调用的方法、参数等信息构造一个调用请求，再通过注册中心找到提供服务的地址，并进行通信获取调用结果，最后将调用结果返回给客户端，这样对于客户端而言就真的感觉只是通过代理类调用了一个方法而已，屏蔽掉了所有的远程传输过程。
@@ -282,6 +283,7 @@ loadBalance = ExtensionLoader.getExtensionLoader(LoadBalance.class).getExtension
 
 加载扩展的整个流程如下：
 ![](./images/Pastedimage20240405114718.png)
+
 主要步骤为 4 个：
 
 - 读取用户rpc配置文件获取用户配置的扩展名
@@ -1019,6 +1021,7 @@ public class NettyServer implements RpcServer {
 ```
 Netty服务器的启动和客户端稍有不同，这里我们定义了两个EventLoopGroup，主要是因为Netty的线程模型如下：
 ![](./images/Pastedimage20240407162804.png)
+
 BossGroup主要负责客户端的连接，WorkerGroup主要负责数据的读写，业务处理。然后我们给通过childHandler给初始化子进程进行通道建立需要绑定的处理逻辑。同时绑定RPC请求处理(NettyServerHandler)时，我们还传入了一个自定义的线程池。
 
 而NettyServerHandler的实现如下：
@@ -1080,6 +1083,7 @@ public class NettyServerHandler extends ChannelInboundHandlerAdapter {
 通过在通道初始化时向管道中绑定编解码的处理器，我们可以实现输入输出流和对象的相互转换，同时我们还可以通过自定义的传输协议解决TCP粘包拆包问题。
 Netty是基于TCP连接的，同时输入输出是通过Buff进行的，而TCP数据是面向流的方式，没有明确的分割一条消息的开始和结束，那么就会出现如下情况：
 ![](./images/Pastedimage20240407191511.png)
+
 因此我们需要自己定义我们RPC消息的传输协议，来区分每条消息的起始位置。
 常见的作法就是在传输开始先用一个int也就是4个字节来表明消息体的长度，这样在接受消息时会直到接收到消息体长度字节的数据才会对消息进行处理。
 此外，为了实现序列化工具的扩展性，我们在消息头中不仅定义了消息的长度，还用一个字节作为序列化标志位，用来表明消息使用的序列化协议。
@@ -1158,6 +1162,7 @@ public class NettyDecoder extends ByteToMessageDecoder {
 ObjectOutputStream 在序列化的时候，会判断被序列化的Object是哪一种类型，String？array？enum？还是 Serializable，如果都不是的话，抛出 NotSerializableException异常。
 序列化的方法就是writeObject：
 ![](./images/Pastedimage20240408104132.png)
+
 writeObject0 主要实现是对象的不同类型，调用不同的方法写入序列化数据，这里面如果对象实现了Serializable接口，就调用writeOrdinaryObject()方法
 writeOrdinaryObject()会先调用writeClassDesc(desc)，写入该类的生成信息，然后调用writeSerialData方法,写入序列化数据
 writeSerialData（）实现的就是写入被序列化对象的字段数据
