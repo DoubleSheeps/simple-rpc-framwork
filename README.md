@@ -27,7 +27,7 @@
 
 ### 实现过程
 
-![](/images/Pasted image 20240405094729.png)
+![](./images/Pasted image 20240405094729.png)
 1. 首先需要有一个**注册中心**，这样服务端向注册中心进行注册，注册中心会记录服务端提供的服务信息，之后客户端需要服务时，也要先向注册中心查找提供服务的服务器地址。
 2. 之后就需要进行**网络传输**，因为客户端与服务提供者的服务器是在不同机器上的，为了实现客户端能调用服务端的服务，我们就要实现底层的网络传输，通过发送调用请求和响应实现远程服务的调用，而网络传输都是二进制的字节码，因此我们也需要实现序列化和反序列化将请求消息对象和响应消息对象进行二进制的编解码，同时为了解决Tcp粘包拆包问题以及序列化方式的可扩展问题，我们还需要定义自己的传输协议，这样在每段消息头中加入消息长度字段和序列化协议字段信息，就可以有效的分割出每个消息，并进行反序列化。
 3. 完成上面两步，我们基本上以及实现了RPC的雏形，也就是实现了客户端调用服务端的方法，但这样意味着每次客户端要调用一个服务，需要先组装调用请求消息，然后调用发送消息的方法，最后获取到响应消息，对客户端来说调用一个服务依然比较复杂，涉及到了很多底层的传输协议。因此我们就需要实现一个**动态代理**，当客户端要调用一个服务时就通过动态代理来调用，而动态代理就会根据客户端调用的方法、参数等信息构造一个调用请求，再通过注册中心找到提供服务的地址，并进行通信获取调用结果，最后将调用结果返回给客户端，这样对于客户端而言就真的感觉只是通过代理类调用了一个方法而已，屏蔽掉了所有的远程传输过程。
@@ -67,7 +67,7 @@ public class ZkServiceRegistryImpl implements ServiceRegistry {
 > 为了兼容各种传输层的工具，我们可以注册是提供服务端使用的传输层工具，这样客户端查找时也可以根据自身支持的传输工具实现服务的调用，提高了系统的兼容性。
 
 这样对于一个服务端提供的基于socket的传输方式的服务ustc.young.HelloService，其服务器ip是127.0.0.1，端口是9999，我们就会在Zookeeper中创建/young-rpc/ustc.young.HelloService/socket/127.0.0.1:9999这样的节点。多个服务端可能会提供相同的服务，最终Zookeeper中的节点可能如下图所示：
-![](/images/Pasted image 20240405142506.png)
+![](./images/Pasted image 20240405142506.png)
 
 代码中CuratorUtil是一个基于Zookeeper的Curator客户端实现的工具类：
 ```java
@@ -281,7 +281,7 @@ loadBalance = ExtensionLoader.getExtensionLoader(LoadBalance.class).getExtension
 进行加载，这实际上是参考[Dubbo的SPI机制](https://cn.dubbo.apache.org/zh-cn/overview/mannual/java-sdk/reference-manual/spi/overview/)实现的加载扩展类方法，十分精妙，使模块之间解耦，符合开闭原则，对扩展开放，对修改关闭。同时还能通过缓存实例实现单例模式。
 
 加载扩展的整个流程如下：
-![](/images/Pasted image 20240405114718.png)
+![](./images/Pasted image 20240405114718.png)
 主要步骤为 4 个：
 
 - 读取用户rpc配置文件获取用户配置的扩展名
@@ -1018,7 +1018,7 @@ public class NettyServer implements RpcServer {
 }
 ```
 Netty服务器的启动和客户端稍有不同，这里我们定义了两个EventLoopGroup，主要是因为Netty的线程模型如下：
-![](/images/Pasted image 20240407162804.png)
+![](./images/Pasted image 20240407162804.png)
 BossGroup主要负责客户端的连接，WorkerGroup主要负责数据的读写，业务处理。然后我们给通过childHandler给初始化子进程进行通道建立需要绑定的处理逻辑。同时绑定RPC请求处理(NettyServerHandler)时，我们还传入了一个自定义的线程池。
 
 而NettyServerHandler的实现如下：
@@ -1157,7 +1157,7 @@ public class NettyDecoder extends ByteToMessageDecoder {
 **底层原理：**
 ObjectOutputStream 在序列化的时候，会判断被序列化的Object是哪一种类型，String？array？enum？还是 Serializable，如果都不是的话，抛出 NotSerializableException异常。
 序列化的方法就是writeObject：
-![](/images/Pasted image 20240408104132.png)
+![](./images/Pasted image 20240408104132.png)
 writeObject0 主要实现是对象的不同类型，调用不同的方法写入序列化数据，这里面如果对象实现了Serializable接口，就调用writeOrdinaryObject()方法
 writeOrdinaryObject()会先调用writeClassDesc(desc)，写入该类的生成信息，然后调用writeSerialData方法,写入序列化数据
 writeSerialData（）实现的就是写入被序列化对象的字段数据
